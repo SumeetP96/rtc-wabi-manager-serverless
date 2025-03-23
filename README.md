@@ -1,76 +1,81 @@
-<!--
-title: 'Serverless Framework Node Express API on AWS'
-description: 'This template demonstrates how to develop and deploy a simple Node Express API running on AWS Lambda using the Serverless Framework.'
-layout: Doc
-framework: v4
-platform: AWS
-language: nodeJS
-priority: 1
-authorLink: 'https://github.com/serverless'
-authorName: 'Serverless, Inc.'
-authorAvatar: 'https://avatars1.githubusercontent.com/u/13742415?s=200&v=4'
--->
+# RTC WhatsApp Business Manager in Serverless framework
 
-# Serverless Framework Node Express API on AWS
+This services uses AWS Lambda functions to interact with the WhatsApp Business API. Checkout the [official documentation](https://developers.facebook.com/docs/whatsapp/cloud-api/overview) from Facebook for more.
 
-This template demonstrates how to develop and deploy a simple Node Express API service running on AWS Lambda using the Serverless Framework.
+This service uses the [Serverless](https://www.serverless.com/framework/docs) framework to manage the Lambda function on AWS.
 
-This template configures a single function, `api`, which is responsible for handling all incoming requests using the `httpApi` event. To learn more about `httpApi` event configuration options, please refer to [httpApi event docs](https://www.serverless.com/framework/docs/providers/aws/events/http-api/). As the event is configured in a way to accept all incoming requests, the Express.js framework is responsible for routing and handling requests internally. This implementation uses the `serverless-http` package to transform the incoming event request payloads to payloads compatible with Express.js. To learn more about `serverless-http`, please refer to the [serverless-http README](https://github.com/dougmoscrop/serverless-http).
+## Lambda Functions
 
-## Usage
+### Webhook Verification Lambda
 
-### Deployment
+Handles the incoming webhook verification request from Facebook, when we register a new webook with them, during WhatsApp configuration.
 
-Install dependencies with:
+### Webhook Handler Lambda
 
+Handles all the incoming events from Facebook.
+
+### Push Template Lambda
+
+Send messages to the given recipients using the provided template.
+
+## Local Development
+
+### 1. Clone the repository
+
+```shell
+git@github.com:SumeetP96/rtc-wabi-manager-serverless.git
 ```
+
+### 2. Install dependencies
+
+```shell
 npm install
 ```
 
-and then deploy with:
+### 3. Create Environment file, and add your values to all the variables.
 
-```
-serverless deploy
-```
-
-After running deploy, you should see output similar to:
-
-```
-Deploying "aws-node-express-api" to stage "dev" (us-east-1)
-
-✔ Service deployed to stack aws-node-express-api-dev (96s)
-
-endpoint: ANY - https://xxxxxxxxxx.execute-api.us-east-1.amazonaws.com
-functions:
-  api: aws-node-express-api-dev-api (2.3 kB)
+```shell
+cp example.env .env
 ```
 
-_Note_: In current form, after deployment, your API is public and can be invoked by anyone. For production deployments, you might want to configure an authorizer. For details on how to do that, refer to [`httpApi` event docs](https://www.serverless.com/framework/docs/providers/aws/events/http-api/).
+### 4. Run locally (uses [serverless-offline plugin](https://www.serverless.com/plugins/serverless-offline))
 
-### Invocation
-
-After successful deployment, you can call the created application via HTTP:
-
-```
-curl https://xxxxxxx.execute-api.us-east-1.amazonaws.com/
+```shell
+npm run dev
 ```
 
-Which should result in the following response:
+## Deployment
 
-```json
-{ "message": "Hello from root!" }
+### Full Service Deployment
+
+Use this command if you are deploying for the first time or you have made any changes to the service configurations.
+
+```shell
+  npm run deploy:service
 ```
 
-### Local development
+### Single Function Deployment
 
-The easiest way to develop and test your function is to use the `dev` command:
+Use this command if you want to deploy only one lambda function. This approach is faster as it only involves dealing with one function rather than complete service.
 
+#### Format:
+
+`npm run deploy:fn:{functionNameAsPerPackageJson}`
+
+#### Lambda Function: [Webhook Verification](#webhook-verification-lambda)
+
+```shell
+npm run deploy:fn:wabiWebhookVerfiy
 ```
-serverless dev
+
+#### Lambda Function: [Webhook Handler](#webhook-handler-lambda)
+
+```shell
+npm run deploy:fn:wabiWebhookEventHandler
 ```
 
-This will start a local emulator of AWS Lambda and tunnel your requests to and from AWS Lambda, allowing you to interact with your function as if it were running in the cloud.
+#### Lambda Function: [Push Template](#push-template-lambda)
 
-Now you can invoke the function as before, but this time the function will be executed locally. Now you can develop your function locally, invoke it, and see the results immediately without having to re-deploy.
-
-When you are done developing, don't forget to run `serverless deploy` to deploy the function to the cloud.
+```shell
+npm run deploy:fn:wabiPushTemplate
+```
