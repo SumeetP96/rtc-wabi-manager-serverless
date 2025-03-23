@@ -1,0 +1,75 @@
+org: sumeetp96
+
+service: whatsapp-business-manager
+
+provider:
+    name: aws
+    runtime: nodejs22.x
+    stage: prod
+    region: ap-south-1
+    httpApi:
+        cors: true
+
+package:
+    individually: true
+    patterns:
+        - '!**/*'
+
+build:
+    esbuild:
+        bundle: true
+
+functions:
+    wabiWebhookVerify:
+        handler: wabi-webhook-verify/handler.handler
+        package:
+            include:
+                - wabi-webhook-verify/**
+        events:
+            - httpApi:
+                  path: /webhook
+                  method: GET
+        environment:
+            WABI_WEBHOOK_VERIFY_TOKEN: ${env:WABI_WEBHOOK_VERIFY_TOKEN}
+
+    wabiWebhookEventHandler:
+        handler: wabi-webhook-event-handler/handler.handler
+        package:
+            include:
+                - wabi-webhook-event-handler/**
+        events:
+            - httpApi:
+                  path: /webhook
+                  method: POST
+        environment:
+            TURSO_DB_URL: ${env:TURSO_DB_URL}
+            TURSO_AUTH_TOKEN: ${env:TURSO_AUTH_TOKEN}
+            WABI_API_ACCESS_TOKEN: ${env:WABI_API_ACCESS_TOKEN}
+            WABI_PHONE_NUMBER_ID: ${env:WABI_PHONE_NUMBER_ID}
+
+    wabiPushTemplate:
+        handler: wabi-push-template/handler.handler
+        package:
+            include:
+                - wabi-push-template/**
+        events:
+            - httpApi:
+                  path: /push-template
+                  method: POST
+        environment:
+            TURSO_DB_URL: ${env:TURSO_DB_URL}
+            TURSO_AUTH_TOKEN: ${env:TURSO_AUTH_TOKEN}
+            WABI_API_ACCESS_TOKEN: ${env:WABI_API_ACCESS_TOKEN}
+            WABI_PHONE_NUMBER_ID: ${env:WABI_PHONE_NUMBER_ID}
+            SERVICE_ACCESS_TOKEN: ${env:SERVICE_ACCESS_TOKEN}
+
+useDotenv: true
+
+plugins:
+    - serverless-prune-plugin
+    - serverless-offline # development only
+
+custom:
+    prune:
+        automatic: true
+        number: 4
