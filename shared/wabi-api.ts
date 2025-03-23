@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { MessageTemplate } from './templates';
 
 const wabiPhoneNumberId = process.env.WABI_PHONE_NUMBER_ID;
 
@@ -58,3 +59,26 @@ export const sendReplyMessage = async ({
     }
 };
 
+export const sendTemplateMessage = async ({
+    template,
+    to,
+}: {
+    template: MessageTemplate;
+    to: string;
+}) => {
+    try {
+        return await wabiApi.post('/messages', {
+            messaging_product: 'whatsapp',
+            to,
+            type: 'template',
+            template: template,
+        });
+    } catch (error) {
+        console.error(
+            `[wabi-api] [${sendTemplateMessage.name}] error: ${
+                (error as Error).message
+            }`
+        );
+        throw error;
+    }
+};
