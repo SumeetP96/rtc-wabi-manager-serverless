@@ -1,81 +1,233 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { sendMessage, sendReplyMessage } from '../shared/wabi-api';
-import { WebhookPayload } from './types';
+import { eq } from 'drizzle-orm';
+import { messages, templates } from '../drizzle/schema';
+import { db } from '../shared/db';
+import { requestBody } from '../shared/request';
+import { generateErrorResponseBody } from '../shared/response';
+import { sendMessage } from '../shared/wabi-api';
+import { Message, Status, WaWebhookPayload } from './types';
+
+type TextMessageType = 'text_start' | 'text_stop' | 'text_echo' | 'text_other';
+
+type ButtonMessageType = 'button_stop' | 'button_other';
+
+type MessageType = TextMessageType | ButtonMessageType;
+
+type TemplateType = 'start' | 'stop' | 'other' | 'echo';
+
+type MessageStatus = 'accepted' | 'sent' | 'delivered' | 'read' | 'failed';
+
+const handlerName = 'wabi-event-handler';
+
+const defaultResponse = {
+    statusCode: 200,
+    body: 'Event processed successfully.',
+};
+
+const templateTypeMap: Record<MessageType, TemplateType> = {
+    text_start: 'start',
+    text_stop: 'stop',
+    text_other: 'other',
+    text_echo: 'echo',
+    button_other: 'other',
+    button_stop: 'stop',
+};
+
+const messageStatusLevelMap: Record<MessageStatus, number> = {
+    accepted: 1,
+    sent: 2,
+    delivered: 3,
+    read: 4,
+    failed: 5,
+};
+
+const buildMessageForTemplate = async (message: Message) => {
+    const messageType = evaluateMessageType(message);
+
+    const templateType = templateTypeMap[messageType];
+
+    if (!messageType || !templateType) {
+        return null;
+    }
+
+    const [template] = await db
+        .select()
+        .from(templates)
+        .where(eq(templates.type, templateType));
+
+    if (!template.text) {
+        return null;
+    }
+
+    return {
+        to: message.from,
+        text: template.text,
+        messageId: message.id,
+    };
+};
+
+const evaluateMessageType = (message: Message): MessageType => {
+    if (message.type === 'button') {
+        switch (true) {
+            case message.button.title.toLowerCase() === 'start promotions':
+                return 'button_stop';
+            default:
+                return 'button_other';
+        }
+    }
+
+    if (message.type === 'text') {
+        switch (true) {
+            case message.text.body.toLowerCase() === 'start':
+                return 'text_start';
+            case message.text.body.toLowerCase() === 'stop':
+                return 'text_stop';
+            case message.text.body.toLowerCase() === 'echo':
+                return 'text_echo';
+            default:
+                return 'text_other';
+        }
+    }
+
+    return 'text_other';
+};
+
+const extractMessage = (payload: WaWebhookPayload): Message | null => {
+    const [change] = payload?.entry?.[0]?.changes;
+
+    const messageObj = change?.value?.messages?.[0];
+
+    return messageObj;
+};
+
+const extractStatus = (payload: WaWebhookPayload): Status | null => {
+    const [change] = payload?.entry?.[0]?.changes;
+
+    const statusObj = change?.value?.statuses?.[0];
+
+    return statusObj;
+};
+
+const processWebhookEvent = (
+    event: APIGatewayProxyEvent
+): {
+    type: 'message' | 'status' | null;
+    payload: Message | Status | null;
+} => {
+    const body = requestBody<WaWebhookPayload>(event);
+
+    const message = extractMessage(body);
+
+    const status = extractStatus(body);
+
+    if (status) {
+        return { type: 'status', payload: status };
+    }
+
+    if (message) {
+        return { type: 'message', payload: message };
+    }
+
+    return { type: null, payload: null };
+};
+
+const errorResponse = (
+    message: string,
+    event: APIGatewayProxyEvent,
+    data: Record<string, any> = {}
+): APIGatewayProxyResult => {
+    generateErrorResponseBody({
+        message,
+        messagePrefix: handlerName,
+        data: {
+            'event.body': requestBody(event),
+            ...data,
+        },
+    });
+
+    return defaultResponse;
+};
 
 export const handler = async (
     event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
     try {
-        console.log('---- event', event);
+        // console.log('----- event', event);
 
-        const body = JSON.parse(event.body || '{}') as WebhookPayload;
+        // Process and validate event type
+        const { type, payload } = processWebhookEvent(event);
 
-        const messageObj = body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0];
-
-        if (!messageObj) {
-            throw new Error('Invalid message object');
+        if (type === null || payload === null) {
+            return errorResponse('Unknown event type.', event);
         }
 
-        if (messageObj.type === 'text') {
-            /**
-             * send a reply message as per the docs
-             * @see https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages
-             */
-            console.log('[text message] received:', messageObj.type);
+        /**
+         * Handle 'message' event
+         */
+        if (type === 'message') {
+            const message = payload as Message;
 
-            if (messageObj.text.body.toLowerCase() === 'echo') {
-                // Echo message
-                const response = await sendReplyMessage({
-                    to: messageObj.from,
-                    text: 'Echo: ' + messageObj.text.body,
-                    messageId: messageObj.id,
-                });
+            const messageBody = await buildMessageForTemplate(message);
 
-                console.log('[echo] response.data:', response.data);
-            } else if (messageObj.text.body.toLowerCase() === 'start') {
-                // Start promotions again
-                const response = await sendReplyMessage({
-                    to: messageObj.from,
-                    text: 'You have been subscribed to promotions. Send "stop" to unsubscribe.',
-                    messageId: messageObj.id,
-                });
+            if (messageBody === null) {
+                return errorResponse('Failed to build messageBody', event);
+            }
 
-                console.log('[start promotions] response.data:', response.data);
-            } else {
-                // Any other text
-                const response = await sendReplyMessage({
-                    to: messageObj.from,
-                    text: 'Thank you for contacting us. This is an automated business chat. If you have any questions, please reach out to us via WhatsApp or phone call at +91-9898278584',
-                    messageId: messageObj.id,
-                });
+            const response = await sendMessage(messageBody);
 
-                console.log('[any text] response.data:', response.data);
+            if (response.status !== 200) {
+                return errorResponse(
+                    'Error sending messageBody to WhatsApp.',
+                    event
+                );
             }
         }
 
-        // Button Actions
-        if (messageObj.type === 'button') {
-            console.log('[button message] received:', messageObj);
+        /**
+         * Handle 'status' update event
+         */
+        if (type === 'status') {
+            const { id: messageId, status } = payload as Status;
 
-            // Stop promotions
-            if (messageObj.button.payload.toLowerCase() === 'stop promotions') {
-                const response = await sendMessage({
-                    to: messageObj.from,
-                    text: 'You have been unsubscribed from promotions. Send "start" to subscribe again.',
-                    messageId: messageObj.id,
-                });
-
-                console.log('[stop promotions] response.data:', response.data);
+            // Validate status
+            if (!Object.keys(messageStatusLevelMap).includes(status)) {
+                return errorResponse('Unknown status', event);
             }
+
+            // Existing message
+            const [dbMessage] = await db
+                .select()
+                .from(messages)
+                .where(eq(messages.waMessageId, messageId));
+
+            if (!dbMessage) {
+                return errorResponse('Message not found.', event);
+            }
+
+            // Validate status level
+            if (
+                messageStatusLevelMap[status as MessageStatus] <=
+                messageStatusLevelMap[dbMessage.status as MessageStatus]
+            ) {
+                return errorResponse(
+                    'Status update skipped. Current status is higher then incoming.',
+                    event
+                );
+            }
+
+            // Update message status in DB
+            await db
+                .update(messages)
+                .set({ status })
+                .where(eq(messages.id, dbMessage.id));
         }
 
-        return { statusCode: 200, body: 'event handled' };
+        return defaultResponse;
     } catch (error) {
-        console.error('[wabi-webhook-event-handler] error:', error);
-
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: 'Internal server error' }),
-        };
+        return errorResponse(
+            'Status update skipped. Current status is higher then incoming.',
+            event,
+            { error }
+        );
     }
 };

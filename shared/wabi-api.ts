@@ -1,5 +1,16 @@
 import axios from 'axios';
-import { MessageTemplate } from './templates';
+
+export interface WaMessageResponse {
+    messaging_product: string;
+    contacts: {
+        input: string;
+        wa_id: string;
+    }[];
+    messages: {
+        id: string;
+        message_status: string;
+    }[];
+}
 
 const wabiPhoneNumberId = process.env.WABI_PHONE_NUMBER_ID;
 
@@ -60,18 +71,25 @@ export const sendReplyMessage = async ({
 };
 
 export const sendTemplateMessage = async ({
-    template,
-    to,
+    templateName,
+    templateLanguageCode,
+    mobileNumber,
 }: {
-    template: MessageTemplate;
-    to: string;
+    templateName: string;
+    templateLanguageCode: string;
+    mobileNumber: string;
 }) => {
     try {
         return await wabiApi.post('/messages', {
             messaging_product: 'whatsapp',
-            to,
+            to: mobileNumber,
             type: 'template',
-            template: template,
+            template: {
+                name: templateName,
+                language: {
+                    code: templateLanguageCode,
+                },
+            },
         });
     } catch (error) {
         console.error(
