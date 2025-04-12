@@ -1,7 +1,7 @@
 import { relations } from "drizzle-orm/relations";
 import { groups, campaigns, templates, customerGroups, customers, messageQueue, messages } from "./schema";
 
-export const campaignsRelations = relations(campaigns, ({one, many}) => ({
+export const campaignsRelations = relations(campaigns, ({one}) => ({
 	group: one(groups, {
 		fields: [campaigns.groupId],
 		references: [groups.id]
@@ -10,13 +10,11 @@ export const campaignsRelations = relations(campaigns, ({one, many}) => ({
 		fields: [campaigns.templateId],
 		references: [templates.id]
 	}),
-	messageQueues: many(messageQueue),
 }));
 
 export const groupsRelations = relations(groups, ({many}) => ({
 	campaigns: many(campaigns),
 	customerGroups: many(customerGroups),
-	messageQueues: many(messageQueue),
 }));
 
 export const templatesRelations = relations(templates, ({many}) => ({
@@ -43,14 +41,6 @@ export const customersRelations = relations(customers, ({many}) => ({
 }));
 
 export const messageQueueRelations = relations(messageQueue, ({one}) => ({
-	group: one(groups, {
-		fields: [messageQueue.groupId],
-		references: [groups.id]
-	}),
-	campaign: one(campaigns, {
-		fields: [messageQueue.campaignId],
-		references: [campaigns.id]
-	}),
 	template: one(templates, {
 		fields: [messageQueue.templateId],
 		references: [templates.id]

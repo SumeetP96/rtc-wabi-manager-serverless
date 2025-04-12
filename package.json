@@ -5,19 +5,30 @@
     },
     "scripts": {
         "dev": "serverless offline",
-        "deploy:service": "serverless deploy",
-        "deploy:fn:wabiWebhookVerify": "serverless deploy function --function wabiWebhookVerify",
-        "deploy:fn:wabiWebhookEventHandler": "serverless deploy function --function wabiWebhookEventHandler",
-        "deploy:fn:wabiPushTemplate": "serverless deploy function --function wabiPushTemplate"
+        "clean": "rm -rf .build",
+        "build": "npm run clean && ./build.sh",
+        "build:docker": "docker run --rm --platform linux/arm64 -v \"$(pwd):/app\" -w /app node:22-bookworm-slim bash -c \"apt-get update && apt-get install -y zip && npm run build\"",
+        "deploy:service": "npm run build:docker && serverless deploy",
+        "deploy:fn:wabiWebhookVerify": "npm run build:docker && serverless deploy function --function wabiWebhookVerify",
+        "deploy:fn:wabiWebhookEventHandler": "npm run build:docker && serverless deploy function --function wabiWebhookEventHandler",
+        "deploy:fn:wabiPushTemplate": "npm run build:docker && serverless deploy function --function wabiPushTemplate",
+        "deploy:fn:wabiMessageQueueHandler": "npm run build:docker && serverless deploy function --function wabiMessageQueueHandler",
+        "db:refresh": "rm -rf drizzle && drizzle-kit pull"
     },
     "dependencies": {
-        "axios": "^1.8.4"
+        "@libsql/client": "^0.15.2",
+        "axios": "^1.8.4",
+        "dayjs": "^1.11.13",
+        "dotenv": "^16.4.7",
+        "drizzle-orm": "^0.41.0"
     },
     "devDependencies": {
         "@types/aws-lambda": "^8.10.147",
         "@types/node": "^22.13.11",
         "aws-lambda": "^1.0.7",
+        "drizzle-kit": "^0.30.6",
         "esbuild-plugin-env": "^1.1.1",
+        "serverless-docker": "^0.0.5",
         "serverless-offline": "^14.4.0",
         "serverless-prune-plugin": "^2.1.0",
         "typescript": "^5.8.2"

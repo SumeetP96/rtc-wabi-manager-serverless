@@ -66,7 +66,7 @@
           "notNull": true
         },
         "created_at": {
-          "default": "(CURRENT_TIMESTAMP)",
+          "default": "(unixepoch())",
           "autoincrement": false,
           "name": "created_at",
           "type": "integer",
@@ -74,7 +74,7 @@
           "notNull": true
         },
         "updated_at": {
-          "default": "(CURRENT_TIMESTAMP)",
+          "default": "(unixepoch())",
           "autoincrement": false,
           "name": "updated_at",
           "type": "integer",
@@ -156,7 +156,7 @@
           "notNull": true
         },
         "created_at": {
-          "default": "(CURRENT_TIMESTAMP)",
+          "default": "(unixepoch())",
           "autoincrement": false,
           "name": "created_at",
           "type": "integer",
@@ -164,7 +164,7 @@
           "notNull": true
         },
         "updated_at": {
-          "default": "(CURRENT_TIMESTAMP)",
+          "default": "(unixepoch())",
           "autoincrement": false,
           "name": "updated_at",
           "type": "integer",
@@ -263,7 +263,7 @@
           "notNull": true
         },
         "created_at": {
-          "default": "(CURRENT_TIMESTAMP)",
+          "default": "(unixepoch())",
           "autoincrement": false,
           "name": "created_at",
           "type": "integer",
@@ -271,7 +271,7 @@
           "notNull": true
         },
         "updated_at": {
-          "default": "(CURRENT_TIMESTAMP)",
+          "default": "(unixepoch())",
           "autoincrement": false,
           "name": "updated_at",
           "type": "integer",
@@ -327,7 +327,7 @@
           "notNull": true
         },
         "created_at": {
-          "default": "(CURRENT_TIMESTAMP)",
+          "default": "(unixepoch())",
           "autoincrement": false,
           "name": "created_at",
           "type": "integer",
@@ -335,7 +335,7 @@
           "notNull": true
         },
         "updated_at": {
-          "default": "(CURRENT_TIMESTAMP)",
+          "default": "(unixepoch())",
           "autoincrement": false,
           "name": "updated_at",
           "type": "integer",
@@ -389,20 +389,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "campaign_id": {
-          "autoincrement": false,
-          "name": "campaign_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "group_id": {
-          "autoincrement": false,
-          "name": "group_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
         "priority": {
           "default": 1,
           "autoincrement": false,
@@ -411,26 +397,25 @@
           "primaryKey": false,
           "notNull": true
         },
-        "created_at": {
-          "default": "(CURRENT_TIMESTAMP)",
+        "date": {
           "autoincrement": false,
-          "name": "created_at",
+          "name": "date",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "updated_at": {
-          "default": "(CURRENT_TIMESTAMP)",
+        "reschedule_count": {
+          "default": 0,
           "autoincrement": false,
-          "name": "updated_at",
+          "name": "reschedule_count",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "deleted_at": {
+        "message_id": {
           "default": "(NULL)",
           "autoincrement": false,
-          "name": "deleted_at",
+          "name": "message_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
@@ -439,32 +424,6 @@
       "compositePrimaryKeys": {},
       "indexes": {},
       "foreignKeys": {
-        "message_queue_group_id_groups_id_fk": {
-          "name": "message_queue_group_id_groups_id_fk",
-          "tableFrom": "message_queue",
-          "tableTo": "groups",
-          "columnsFrom": [
-            "group_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "message_queue_campaign_id_campaigns_id_fk": {
-          "name": "message_queue_campaign_id_campaigns_id_fk",
-          "tableFrom": "message_queue",
-          "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
         "message_queue_template_id_templates_id_fk": {
           "name": "message_queue_template_id_templates_id_fk",
           "tableFrom": "message_queue",
@@ -524,7 +483,7 @@
           "name": "wa_message_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "status": {
           "autoincrement": false,
@@ -533,8 +492,16 @@
           "primaryKey": false,
           "notNull": true
         },
+        "metadata": {
+          "default": "(NULL)",
+          "autoincrement": false,
+          "name": "metadata",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
-          "default": "(CURRENT_TIMESTAMP)",
+          "default": "(unixepoch())",
           "autoincrement": false,
           "name": "created_at",
           "type": "integer",
@@ -542,7 +509,7 @@
           "notNull": true
         },
         "updated_at": {
-          "default": "(CURRENT_TIMESTAMP)",
+          "default": "(unixepoch())",
           "autoincrement": false,
           "name": "updated_at",
           "type": "integer",
@@ -663,7 +630,7 @@
           "notNull": true
         },
         "created_at": {
-          "default": "(CURRENT_TIMESTAMP)",
+          "default": "(unixepoch())",
           "autoincrement": false,
           "name": "created_at",
           "type": "integer",
@@ -671,7 +638,7 @@
           "notNull": true
         },
         "updated_at": {
-          "default": "(CURRENT_TIMESTAMP)",
+          "default": "(unixepoch())",
           "autoincrement": false,
           "name": "updated_at",
           "type": "integer",
@@ -688,7 +655,23 @@
         }
       },
       "compositePrimaryKeys": {},
-      "indexes": {},
+      "indexes": {
+        "wa_template_language_unique_idx": {
+          "name": "wa_template_language_unique_idx",
+          "columns": [
+            "wa_template_id",
+            "wa_template_language_code"
+          ],
+          "isUnique": true
+        },
+        "templates_name_unique": {
+          "name": "templates_name_unique",
+          "columns": [
+            "name"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}

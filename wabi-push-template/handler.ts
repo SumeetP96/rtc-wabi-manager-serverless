@@ -24,7 +24,7 @@ export const handler = async (
     };
 
     try {
-        console.log('---- event', event);
+        // console.log('---- event', event);
 
         // Authorization;
         const headerAccessKey = event.headers['authorization'];
@@ -131,19 +131,16 @@ export const handler = async (
 
                 const data = response.data as WaMessageResponse;
 
-                const result = await db
-                    .insert(schema.messages)
-                    .values({
-                        customerId: customer.id,
-                        templateId: template.id,
-                        waMessageId: data.messages[0].id,
-                        status: data.messages[0].message_status,
-                    })
-                    .returning();
+                await db.insert(schema.messages).values({
+                    customerId: customer.id,
+                    templateId: template.id,
+                    waMessageId: data.messages[0].id,
+                    status: data.messages[0].message_status,
+                });
 
-                console.log('result', result);
-
-                await manualDelay(1000);
+                if (customers.length > 1) {
+                    await manualDelay(100);
+                }
             } catch (error) {
                 messageErrors.push({
                     templateId: template.id,

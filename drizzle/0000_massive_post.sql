@@ -10,8 +10,8 @@ CREATE TABLE `campaigns` (
 	`start_date` integer NOT NULL,
 	`end_date` integer NOT NULL,
 	`daily_limit` integer DEFAULT 0 NOT NULL,
-	`created_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
-	`updated_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
+	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
 	`deleted_at` integer DEFAULT (NULL),
 	FOREIGN KEY (`group_id`) REFERENCES `groups`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`template_id`) REFERENCES `templates`(`id`) ON UPDATE no action ON DELETE no action
@@ -22,8 +22,8 @@ CREATE TABLE `customer_groups` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`customer_id` integer NOT NULL,
 	`group_id` integer NOT NULL,
-	`created_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
-	`updated_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
+	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
 	`deleted_at` integer DEFAULT (NULL),
 	FOREIGN KEY (`group_id`) REFERENCES `groups`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON UPDATE no action ON DELETE no action
@@ -36,8 +36,8 @@ CREATE TABLE `customers` (
 	`mobile_number` text NOT NULL,
 	`is_subscribed` integer DEFAULT 1 NOT NULL,
 	`is_whatsapp_account` integer DEFAULT 1 NOT NULL,
-	`created_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
-	`updated_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
+	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
 	`deleted_at` integer DEFAULT (NULL)
 );
 --> statement-breakpoint
@@ -46,8 +46,8 @@ CREATE UNIQUE INDEX `customers_mobile_number_unique` ON `customers` (`mobile_num
 CREATE TABLE `groups` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text NOT NULL,
-	`created_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
-	`updated_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
+	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
 	`deleted_at` integer DEFAULT (NULL)
 );
 --> statement-breakpoint
@@ -56,14 +56,10 @@ CREATE TABLE `message_queue` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`customer_id` integer NOT NULL,
 	`template_id` integer NOT NULL,
-	`campaign_id` integer,
-	`group_id` integer,
 	`priority` integer DEFAULT 1 NOT NULL,
-	`created_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
-	`updated_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
-	`deleted_at` integer DEFAULT (NULL),
-	FOREIGN KEY (`group_id`) REFERENCES `groups`(`id`) ON UPDATE no action ON DELETE no action,
-	FOREIGN KEY (`campaign_id`) REFERENCES `campaigns`(`id`) ON UPDATE no action ON DELETE no action,
+	`date` integer NOT NULL,
+	`reschedule_count` integer DEFAULT 0 NOT NULL,
+	`message_id` integer DEFAULT (NULL),
 	FOREIGN KEY (`template_id`) REFERENCES `templates`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON UPDATE no action ON DELETE no action
 );
@@ -72,10 +68,11 @@ CREATE TABLE `messages` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`customer_id` integer NOT NULL,
 	`template_id` integer NOT NULL,
-	`wa_message_id` text NOT NULL,
+	`wa_message_id` text,
 	`status` text NOT NULL,
-	`created_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
-	`updated_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+	`metadata` text DEFAULT (NULL),
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
+	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
 	`deleted_at` integer DEFAULT (NULL),
 	FOREIGN KEY (`template_id`) REFERENCES `templates`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON UPDATE no action ON DELETE no action
@@ -91,9 +88,11 @@ CREATE TABLE `templates` (
 	`wa_template_language_code` text DEFAULT (NULL),
 	`text` text DEFAULT (NULL),
 	`is_active` integer DEFAULT 1 NOT NULL,
-	`created_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
-	`updated_at` integer DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
+	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
 	`deleted_at` integer DEFAULT (NULL)
 );
-
+--> statement-breakpoint
+CREATE UNIQUE INDEX `wa_template_language_unique_idx` ON `templates` (`wa_template_id`,`wa_template_language_code`);--> statement-breakpoint
+CREATE UNIQUE INDEX `templates_name_unique` ON `templates` (`name`);
 */

@@ -7,24 +7,17 @@ provider:
     runtime: nodejs22.x
     stage: prod
     region: ap-south-1
+    architecture: arm64
     httpApi:
         cors: true
-
-package:
-    individually: true
-    patterns:
-        - '!**/*'
-
-build:
-    esbuild:
-        bundle: true
 
 functions:
     wabiWebhookVerify:
         handler: wabi-webhook-verify/handler.handler
         package:
-            include:
-                - wabi-webhook-verify/**
+            # include: # dev only
+            #     - wabi-webhook-verify/**
+            artifact: .build/wabi-webhook-verify.zip
         events:
             - httpApi:
                   path: /webhook
@@ -35,14 +28,15 @@ functions:
     wabiWebhookEventHandler:
         handler: wabi-webhook-event-handler/handler.handler
         package:
-            include:
-                - wabi-webhook-event-handler/**
+            # include: # dev only
+            #     - wabi-webhook-event-handler/**
+            artifact: .build/wabi-webhook-event-handler.zip
         events:
             - httpApi:
                   path: /webhook
                   method: POST
         environment:
-            TURSO_DB_URL: ${env:TURSO_DB_URL}
+            TURSO_DATABASE_URL: ${env:TURSO_DATABASE_URL}
             TURSO_AUTH_TOKEN: ${env:TURSO_AUTH_TOKEN}
             WABI_API_ACCESS_TOKEN: ${env:WABI_API_ACCESS_TOKEN}
             WABI_PHONE_NUMBER_ID: ${env:WABI_PHONE_NUMBER_ID}
@@ -50,18 +44,37 @@ functions:
     wabiPushTemplate:
         handler: wabi-push-template/handler.handler
         package:
-            include:
-                - wabi-push-template/**
+            # include: # dev only
+            #     - wabi-push-template/**
+            artifact: .build/wabi-push-template.zip
         events:
             - httpApi:
                   path: /push-template
                   method: POST
         environment:
-            TURSO_DB_URL: ${env:TURSO_DB_URL}
+            TURSO_DATABASE_URL: ${env:TURSO_DATABASE_URL}
             TURSO_AUTH_TOKEN: ${env:TURSO_AUTH_TOKEN}
             WABI_API_ACCESS_TOKEN: ${env:WABI_API_ACCESS_TOKEN}
             WABI_PHONE_NUMBER_ID: ${env:WABI_PHONE_NUMBER_ID}
             SERVICE_ACCESS_TOKEN: ${env:SERVICE_ACCESS_TOKEN}
+
+    wabiMessageQueueHandler:
+        handler: wabi-message-queue-handler/handler.handler
+        package:
+            # include: # dev only
+            #     - wabi-message-queue-handler/**
+            artifact: .build/wabi-message-queue-handler.zip
+        events:
+            - httpApi:
+                  path: /process-queue
+                  method: POST
+        environment:
+            TURSO_DATABASE_URL: ${env:TURSO_DATABASE_URL}
+            TURSO_AUTH_TOKEN: ${env:TURSO_AUTH_TOKEN}
+            WABI_API_ACCESS_TOKEN: ${env:WABI_API_ACCESS_TOKEN}
+            WABI_PHONE_NUMBER_ID: ${env:WABI_PHONE_NUMBER_ID}
+            SERVICE_ACCESS_TOKEN: ${env:SERVICE_ACCESS_TOKEN}
+            WABI_DAILY_CONVERSATION_LIMIT: ${env:WABI_DAILY_CONVERSATION_LIMIT}
 
 useDotenv: true
 
@@ -70,6 +83,9 @@ plugins:
     - serverless-offline # development only
 
 custom:
+    serverless-offline:
+        httpPort: 3001
+        lambdaPort: 3002
     prune:
         automatic: true
         number: 4
