@@ -1,6 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import dayjs from 'dayjs';
-import { and, asc, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, isNull, lt, SQL, sql } from 'drizzle-orm';
 import {
     customers,
     messageQueue,
@@ -134,12 +134,20 @@ const generateQueryConditions = (target?: QueueTarget) => {
     const conditions = [lt(messageQueue.date, dayjs().add(1, 'days').unix())];
 
     if (target === 'group') {
-        isNotNull(messageQueue.groupId);
+        conditions.push(
+            and(
+                isNotNull(messageQueue.groupId),
+                isNull(messageQueue.campaignId),
+                eq(messageQueue.priority, 2)
+            ) as SQL<unknown>
+        );
     } else if (target === 'bulk') {
-        and(
-            isNull(messageQueue.groupId),
-            isNull(messageQueue.campaignId),
-            eq(messageQueue.priority, 1)
+        conditions.push(
+            and(
+                isNull(messageQueue.groupId),
+                isNull(messageQueue.campaignId),
+                eq(messageQueue.priority, 1)
+            ) as SQL<unknown>
         );
     }
 
@@ -185,6 +193,8 @@ const processQueue = async (queueSize: number, target?: QueueTarget) => {
         queueMeta.totalSentMessages <= dailyConversationLimit
     ) {
         const queueItem = await getQueueItem(target);
+
+        console.log('queueItem', queueItem);
 
         if (!queueItem) {
             queueMeta.queueProcessed = true;
@@ -232,8 +242,19 @@ export const handler = async (
     };
 
     try {
+        // console.log('----- event', event);
+
+        let body: { target?: QueueTarget; token?: string };
+
+        try {
+            body = JSON.parse(event.body || '{}');
+        } catch (error) {
+            body = event.body as { target?: QueueTarget; token?: string };
+        }
+
         // Authorization
-        const headerAccessKey = event.headers['authorization'];
+        const headerAccessKey =
+            event.headers?.['authorization'] || body?.token || '';
 
         if (
             !headerAccessKey ||
@@ -250,10 +271,10 @@ export const handler = async (
             };
         }
 
-        const body = JSON.parse(event.body || '{}') as { target?: QueueTarget };
-
         // Verify queue size
         const totalQueuedMessages = await getQueueSize(body.target);
+
+        console.log('---- totalQueuedMessages', totalQueuedMessages);
 
         if (totalQueuedMessages === 0) {
             responseBody.message = 'No messages in queue';
@@ -268,6 +289,8 @@ export const handler = async (
             totalQueuedMessages,
             body.target
         );
+
+        console.log('---- responseBody.data', responseBody.data);
 
         return {
             statusCode: 200,
