@@ -56,16 +56,6 @@ export const groups = sqliteTable("groups", {
 	uniqueIndex("groups_name_unique").on(table.name),
 ]);
 
-export const messageQueue = sqliteTable("message_queue", {
-	id: integer().primaryKey({ autoIncrement: true }).notNull(),
-	customerId: integer("customer_id").notNull().references(() => customers.id),
-	templateId: integer("template_id").notNull().references(() => templates.id),
-	priority: integer().default(1).notNull(),
-	date: integer().notNull(),
-	rescheduleCount: integer("reschedule_count").default(0).notNull(),
-	messageId: integer("message_id").default(sql`(NULL)`),
-});
-
 export const messages = sqliteTable("messages", {
 	id: integer().primaryKey({ autoIncrement: true }).notNull(),
 	customerId: integer("customer_id").notNull().references(() => customers.id),
@@ -98,4 +88,16 @@ export const templates = sqliteTable("templates", {
 	uniqueIndex("wa_template_language_unique_idx").on(table.waTemplateId, table.waTemplateLanguageCode),
 	uniqueIndex("templates_name_unique").on(table.name),
 ]);
+
+export const messageQueue = sqliteTable("message_queue", {
+	id: integer().primaryKey({ autoIncrement: true }).notNull(),
+	customerId: integer("customer_id").notNull().references(() => customers.id),
+	templateId: integer("template_id").notNull().references(() => templates.id),
+	messageId: integer("message_id").default(sql`(NULL)`).references(() => messages.id),
+	groupId: integer("group_id").default(sql`(NULL)`).references(() => groups.id),
+	campaignId: integer("campaign_id").default(sql`(NULL)`).references(() => campaigns.id),
+	priority: integer().default(1).notNull(),
+	date: integer().notNull(),
+	rescheduleCount: integer("reschedule_count").default(0).notNull(),
+});
 

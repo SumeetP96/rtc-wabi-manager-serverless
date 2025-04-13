@@ -365,95 +365,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "message_queue": {
-      "name": "message_queue",
-      "columns": {
-        "id": {
-          "autoincrement": true,
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "customer_id": {
-          "autoincrement": false,
-          "name": "customer_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "template_id": {
-          "autoincrement": false,
-          "name": "template_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "priority": {
-          "default": 1,
-          "autoincrement": false,
-          "name": "priority",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "date": {
-          "autoincrement": false,
-          "name": "date",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reschedule_count": {
-          "default": 0,
-          "autoincrement": false,
-          "name": "reschedule_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "message_id": {
-          "default": "(NULL)",
-          "autoincrement": false,
-          "name": "message_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "compositePrimaryKeys": {},
-      "indexes": {},
-      "foreignKeys": {
-        "message_queue_template_id_templates_id_fk": {
-          "name": "message_queue_template_id_templates_id_fk",
-          "tableFrom": "message_queue",
-          "tableTo": "templates",
-          "columnsFrom": [
-            "template_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "message_queue_customer_id_customers_id_fk": {
-          "name": "message_queue_customer_id_customers_id_fk",
-          "tableFrom": "message_queue",
-          "tableTo": "customers",
-          "columnsFrom": [
-            "customer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "messages": {
       "name": "messages",
       "columns": {
@@ -673,6 +584,150 @@
         }
       },
       "foreignKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "message_queue": {
+      "name": "message_queue",
+      "columns": {
+        "id": {
+          "autoincrement": true,
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "customer_id": {
+          "autoincrement": false,
+          "name": "customer_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "template_id": {
+          "autoincrement": false,
+          "name": "template_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "message_id": {
+          "default": "(NULL)",
+          "autoincrement": false,
+          "name": "message_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "group_id": {
+          "default": "(NULL)",
+          "autoincrement": false,
+          "name": "group_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "campaign_id": {
+          "default": "(NULL)",
+          "autoincrement": false,
+          "name": "campaign_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "priority": {
+          "default": 1,
+          "autoincrement": false,
+          "name": "priority",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "autoincrement": false,
+          "name": "date",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reschedule_count": {
+          "default": 0,
+          "autoincrement": false,
+          "name": "reschedule_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "compositePrimaryKeys": {},
+      "indexes": {},
+      "foreignKeys": {
+        "message_queue_campaign_id_campaigns_id_fk": {
+          "name": "message_queue_campaign_id_campaigns_id_fk",
+          "tableFrom": "message_queue",
+          "tableTo": "campaigns",
+          "columnsFrom": [
+            "campaign_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "message_queue_group_id_groups_id_fk": {
+          "name": "message_queue_group_id_groups_id_fk",
+          "tableFrom": "message_queue",
+          "tableTo": "groups",
+          "columnsFrom": [
+            "group_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "message_queue_message_id_messages_id_fk": {
+          "name": "message_queue_message_id_messages_id_fk",
+          "tableFrom": "message_queue",
+          "tableTo": "messages",
+          "columnsFrom": [
+            "message_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "message_queue_template_id_templates_id_fk": {
+          "name": "message_queue_template_id_templates_id_fk",
+          "tableFrom": "message_queue",
+          "tableTo": "templates",
+          "columnsFrom": [
+            "template_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "message_queue_customer_id_customers_id_fk": {
+          "name": "message_queue_customer_id_customers_id_fk",
+          "tableFrom": "message_queue",
+          "tableTo": "customers",
+          "columnsFrom": [
+            "customer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "uniqueConstraints": {},
       "checkConstraints": {}
     }

@@ -52,18 +52,6 @@ CREATE TABLE `groups` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `groups_name_unique` ON `groups` (`name`);--> statement-breakpoint
-CREATE TABLE `message_queue` (
-	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-	`customer_id` integer NOT NULL,
-	`template_id` integer NOT NULL,
-	`priority` integer DEFAULT 1 NOT NULL,
-	`date` integer NOT NULL,
-	`reschedule_count` integer DEFAULT 0 NOT NULL,
-	`message_id` integer DEFAULT (NULL),
-	FOREIGN KEY (`template_id`) REFERENCES `templates`(`id`) ON UPDATE no action ON DELETE no action,
-	FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON UPDATE no action ON DELETE no action
-);
---> statement-breakpoint
 CREATE TABLE `messages` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`customer_id` integer NOT NULL,
@@ -94,5 +82,22 @@ CREATE TABLE `templates` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `wa_template_language_unique_idx` ON `templates` (`wa_template_id`,`wa_template_language_code`);--> statement-breakpoint
-CREATE UNIQUE INDEX `templates_name_unique` ON `templates` (`name`);
+CREATE UNIQUE INDEX `templates_name_unique` ON `templates` (`name`);--> statement-breakpoint
+CREATE TABLE `message_queue` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`customer_id` integer NOT NULL,
+	`template_id` integer NOT NULL,
+	`message_id` integer DEFAULT (NULL),
+	`group_id` integer DEFAULT (NULL),
+	`campaign_id` integer DEFAULT (NULL),
+	`priority` integer DEFAULT 1 NOT NULL,
+	`date` integer NOT NULL,
+	`reschedule_count` integer DEFAULT 0 NOT NULL,
+	FOREIGN KEY (`campaign_id`) REFERENCES `campaigns`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`group_id`) REFERENCES `groups`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`message_id`) REFERENCES `messages`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`template_id`) REFERENCES `templates`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON UPDATE no action ON DELETE no action
+);
+
 */

@@ -139,7 +139,7 @@ export const handler = async (
                 });
 
                 if (customers.length > 1) {
-                    await manualDelay(100);
+                    await manualDelay(200);
                 }
             } catch (error) {
                 messageErrors.push({

@@ -52,6 +52,5 @@ build_function "wabi-push-template"
 build_function "wabi-message-queue-handler"
 
 npm uninstall @libsql/linux-arm64-gnu
-npm ci
 
 echo "Build complete! Artifacts in .build/"
