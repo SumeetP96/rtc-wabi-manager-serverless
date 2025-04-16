@@ -42,13 +42,36 @@ const messageStatusLevelMap: Record<MessageStatus, number> = {
     failed: 5,
 };
 
-const updateCustomerPreferece = async (templateType: TemplateType) => {
+const updateCustomerPreferece = async (
+    message: Message,
+    templateType: TemplateType
+) => {
+    const [dbMessage] = await db
+        .select({
+            customerId: customers.id,
+        })
+        .from(messages)
+        .where(eq(messages.waMessageId, message.id))
+        .leftJoin(customers, eq(messages.customerId, customers.id));
+
+    if (!dbMessage?.customerId) {
+        console.error(
+            `----- [${updateCustomerPreferece.name}]: customerId not found`
+        );
+    }
+
     if (templateType === 'stop') {
-        await db.update(customers).set({ isSubscribed: 0 });
+        await db
+            .update(customers)
+            .set({ isSubscribed: 0, updatedAt: dj().utc().unix() })
+            .where(eq(customers.id, dbMessage.customerId as number));
     }
 
     if (templateType === 'start') {
-        await db.update(customers).set({ isSubscribed: 1 });
+        await db
+            .update(customers)
+            .set({ isSubscribed: 1, updatedAt: dj().utc().unix() })
+            .where(eq(customers.id, dbMessage.customerId as number));
     }
 };
 
@@ -61,7 +84,7 @@ const buildMessageForTemplate = async (message: Message) => {
         return null;
     }
 
-    await updateCustomerPreferece(templateType);
+    await updateCustomerPreferece(message, templateType);
 
     const [template] = await db
         .select()
@@ -169,6 +192,9 @@ export const handler = async (
 
         // Process and validate event type
         const { type, payload } = processWebhookEvent(event);
+
+        console.log('\n------ payload', payload);
+        console.log('\n------ type', type);
 
         if (type === null || payload === null) {
             return errorResponse('Unknown event type.', event);
