@@ -189,7 +189,7 @@ const processQueue = async (queueSize: number, target?: QueueTarget) => {
         messageErrors: [],
     };
 
-    const maxIterations = 10;
+    const maxIterations = 1000;
 
     let iteration = 0;
 
