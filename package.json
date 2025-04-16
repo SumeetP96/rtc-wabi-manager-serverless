@@ -5,9 +5,10 @@
     },
     "scripts": {
         "dev": "serverless offline",
+        "dev:reinstall": "npm run reinstall && serverless offline",
         "clean": "rm -rf .build",
         "reinstall": "rm -rf node_modules && npm install",
-        "build": "npm run clean && ./build.sh && npm run reinstall",
+        "build": "npm run clean && ./build.sh",
         "build:docker": "docker run --rm --platform linux/arm64 -v \"$(pwd):/app\" -w /app node:22-bookworm-slim bash -c \"apt-get update && apt-get install -y zip && npm run build\"",
         "deploy:service": "npm run build:docker && serverless deploy",
         "deploy:fn:wabiWebhookVerify": "npm run build:docker && serverless deploy function --function wabiWebhookVerify",

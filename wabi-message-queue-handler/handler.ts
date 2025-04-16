@@ -1,12 +1,12 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import dayjs from 'dayjs';
-import { and, asc, eq, isNotNull, isNull, lt, SQL, sql } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, isNull, lt, sql, SQL } from 'drizzle-orm';
 import {
     customers,
     messageQueue,
     messages,
     templates,
 } from '../drizzle/schema';
+import { dj } from '../shared/dayjs';
 import { db, DbTransaction, Message, MessageQueue } from '../shared/db';
 import { manualDelay } from '../shared/manual-delay';
 import { buildResponseBody, ReturnResponseBody } from '../shared/response';
@@ -14,10 +14,6 @@ import { sendTemplateMessage, WaMessageResponse } from '../shared/wabi-api';
 import { QueueItem, QueueMeta, QueueTarget } from './types';
 
 const apiAccessToken = process.env.SERVICE_ACCESS_TOKEN || '';
-
-const dailyConversationLimit = Number(
-    process.env.WABI_DAILY_CONVERSATION_LIMIT || 0
-);
 
 const rescheduleThreshold = 3;
 
@@ -28,7 +24,10 @@ const updateMessageById = async (
     id: number,
     data: Partial<Message>
 ) => {
-    await tx.update(messages).set(data).where(eq(messages.id, id));
+    await tx
+        .update(messages)
+        .set({ ...data, updatedAt: dj().unix() })
+        .where(eq(messages.id, id));
 };
 
 const updateMessageQueueById = async (
@@ -79,7 +78,7 @@ const updateMessageAndRescheduleQueueItem = async (
     queueItem: QueueItem
 ) => {
     await updateMessageQueueById(tx, queueItem.id, {
-        date: dayjs().add(1, 'days').unix(),
+        date: dj().add(1, 'days').unix(),
         rescheduleCount: queueItem.rescheduleCount + 1,
     });
 
@@ -131,7 +130,9 @@ const sendQueueMessage = async (queueItem: QueueItem) => {
 };
 
 const generateQueryConditions = (target?: QueueTarget) => {
-    const conditions = [lt(messageQueue.date, dayjs().add(1, 'days').unix())];
+    const conditions = [
+        lt(messageQueue.date, dj().utc().add(1, 'days').startOf('day').unix()),
+    ];
 
     if (target === 'group') {
         conditions.push(
@@ -188,10 +189,15 @@ const processQueue = async (queueSize: number, target?: QueueTarget) => {
         messageErrors: [],
     };
 
-    while (
-        queueMeta.queueProcessed === false &&
-        queueMeta.totalSentMessages <= dailyConversationLimit
-    ) {
+    const maxIterations = 10;
+
+    let iteration = 0;
+
+    while (queueMeta.queueProcessed === false && iteration <= maxIterations) {
+        console.log('iteration', iteration);
+
+        iteration += 1;
+
         const queueItem = await getQueueItem(target);
 
         console.log('queueItem', queueItem);

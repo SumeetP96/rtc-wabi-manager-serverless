@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { eq } from 'drizzle-orm';
-import { messages, templates } from '../drizzle/schema';
+import { customers, messages, templates } from '../drizzle/schema';
+import { dj } from '../shared/dayjs';
 import { db } from '../shared/db';
 import { requestBody } from '../shared/request';
 import { generateErrorResponseBody } from '../shared/response';
@@ -41,6 +42,16 @@ const messageStatusLevelMap: Record<MessageStatus, number> = {
     failed: 5,
 };
 
+const updateCustomerPreferece = async (templateType: TemplateType) => {
+    if (templateType === 'stop') {
+        await db.update(customers).set({ isSubscribed: 0 });
+    }
+
+    if (templateType === 'start') {
+        await db.update(customers).set({ isSubscribed: 1 });
+    }
+};
+
 const buildMessageForTemplate = async (message: Message) => {
     const messageType = evaluateMessageType(message);
 
@@ -49,6 +60,8 @@ const buildMessageForTemplate = async (message: Message) => {
     if (!messageType || !templateType) {
         return null;
     }
+
+    await updateCustomerPreferece(templateType);
 
     const [template] = await db
         .select()
@@ -69,7 +82,7 @@ const buildMessageForTemplate = async (message: Message) => {
 const evaluateMessageType = (message: Message): MessageType => {
     if (message.type === 'button') {
         switch (true) {
-            case message.button.title.toLowerCase() === 'start promotions':
+            case message.button.payload.toLowerCase() === 'stop promotions':
                 return 'button_stop';
             default:
                 return 'button_other';
@@ -218,7 +231,7 @@ export const handler = async (
             // Update message status in DB
             await db
                 .update(messages)
-                .set({ status })
+                .set({ status, updatedAt: dj().utc().unix() })
                 .where(eq(messages.id, dbMessage.id));
         }
 
