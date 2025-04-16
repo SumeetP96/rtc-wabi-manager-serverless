@@ -42,7 +42,7 @@ const messageStatusLevelMap: Record<MessageStatus, number> = {
     failed: 5,
 };
 
-const updateCustomerPreferece = async (
+const updateCustomerPreference = async (
     message: Message,
     templateType: TemplateType
 ) => {
@@ -56,7 +56,7 @@ const updateCustomerPreferece = async (
 
     if (!dbMessage?.customerId) {
         console.error(
-            `----- [${updateCustomerPreferece.name}]: customerId not found`
+            `----- [${updateCustomerPreference.name}]: customerId not found`
         );
     }
 
@@ -84,7 +84,13 @@ const buildMessageForTemplate = async (message: Message) => {
         return null;
     }
 
-    await updateCustomerPreferece(message, templateType);
+    if (message.id) {
+        await updateCustomerPreference(message, templateType);
+    } else {
+        console.error(
+            `----- [${buildMessageForTemplate.name}]: message.id not found`
+        );
+    }
 
     const [template] = await db
         .select()
@@ -196,8 +202,7 @@ export const handler = async (
         // Process and validate event type
         const { type, payload } = processWebhookEvent(event);
 
-        console.log('\n------ payload', payload);
-        console.log('\n------ type', type);
+        console.info('\n------ log', JSON.stringify({ type, payload }));
 
         if (type === null || payload === null) {
             return errorResponse('Unknown event type.', event);
