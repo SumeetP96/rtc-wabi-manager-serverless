@@ -96,9 +96,12 @@ const buildMessageForTemplate = async (message: Message) => {
     }
 
     return {
-        to: message.from,
-        text: template.text,
-        messageId: message.id,
+        template,
+        payload: {
+            to: message.from,
+            text: template.text,
+            messageId: message.id,
+        },
     };
 };
 
@@ -212,13 +215,21 @@ export const handler = async (
                 return errorResponse('Failed to build messageBody', event);
             }
 
-            const response = await sendMessage(messageBody);
+            const response = await sendMessage(messageBody.payload);
 
             if (response.status !== 200) {
                 return errorResponse(
                     'Error sending messageBody to WhatsApp.',
                     event
                 );
+            } else {
+                await db.insert(messages).values({
+                    customerId: 1,
+                    templateId: messageBody.template.id,
+                    waMessageId: messageBody.payload.messageId,
+                    status: 'reply',
+                    metadata: JSON.stringify(response.data),
+                });
             }
         }
 
