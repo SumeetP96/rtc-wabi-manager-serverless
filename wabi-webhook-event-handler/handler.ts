@@ -46,32 +46,32 @@ const updateCustomerPreference = async (
     message: Message,
     templateType: TemplateType
 ) => {
-    const [dbMessage] = await db
-        .select({
-            customerId: customers.id,
-        })
-        .from(messages)
-        .where(eq(messages.waMessageId, message.id))
-        .leftJoin(customers, eq(messages.customerId, customers.id));
+    const [dbCustomer] = await db
+        .select()
+        .from(customers)
+        .where(eq(customers.mobileNumber, message.from));
 
-    if (!dbMessage?.customerId) {
+    console.log('----- dbCustomer', dbCustomer);
+
+    if (!dbCustomer) {
         console.error(
-            `----- [${updateCustomerPreference.name}]: customerId not found`
+            `----- [${updateCustomerPreference.name}]: customer not found`
         );
+        return;
     }
 
     if (templateType === 'stop') {
         await db
             .update(customers)
             .set({ isSubscribed: 0, updatedAt: dj().utc().unix() })
-            .where(eq(customers.id, dbMessage.customerId as number));
+            .where(eq(customers.id, dbCustomer.id));
     }
 
     if (templateType === 'start') {
         await db
             .update(customers)
             .set({ isSubscribed: 1, updatedAt: dj().utc().unix() })
-            .where(eq(customers.id, dbMessage.customerId as number));
+            .where(eq(customers.id, dbCustomer.id));
     }
 };
 
@@ -184,10 +184,10 @@ const errorResponse = (
     generateErrorResponseBody({
         message,
         messagePrefix: handlerName,
-        data: {
+        data: JSON.stringify({
             'event.body': requestBody(event),
             ...data,
-        },
+        }),
     });
 
     return defaultResponse;
@@ -280,7 +280,7 @@ export const handler = async (
         return defaultResponse;
     } catch (error) {
         return errorResponse(
-            'Status update skipped. Current status is higher then incoming.',
+            `[${handlerName}] error: ${(error as Error).message}`,
             event,
             { error }
         );
